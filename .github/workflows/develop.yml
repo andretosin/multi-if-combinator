@@ -1,0 +1,35 @@
+name: Develop Build
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run package-dev.sh
+        run: bash scripts/package-dev.sh
+
+      - name: Read mod info
+        id: info
+        run: |
+          VERSION=$(python -c "import json; print(json.load(open('info.json'))['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          MOD_NAME=$(python -c "import json; print(json.load(open('info.json'))['name'])")
+          echo "package=${MOD_NAME}_${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload mod artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # Upload the parent build/ dir so the mod folder is kept inside the
+          # artifact. Downloading gives <package>.zip -> <package>/ -> files: a
+          # single zip Factorio can use directly, with no zip-inside-a-zip.
+          name: ${{ steps.info.outputs.package }}
+          path: build
+          retention-days: 7

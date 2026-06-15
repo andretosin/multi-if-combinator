@@ -1,0 +1,11 @@
+{
+  "name": "multi-if-combinator",
+  "version": "1.0.0",
+  "title": "Multi-If Combinator",
+  "author": "André Luiz Tosin",
+  "description": "A combinator that evaluates many fully independent IF conditions at once, each with its own dedicated output (IF iron < 500 THEN output iron = 500). Solves the vanilla decider limitation where all conditions share a single combined output. Custom GUI for per-row mapping, UPS-friendly scripted output via a hidden constant combinator, blueprint and copy-paste support.",
+  "factorio_version": "2.0",
+  "dependencies": [
+    "base >= 2.0"
+  ]
+}

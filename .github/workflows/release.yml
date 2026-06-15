@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run package.sh
+        run: bash scripts/package.sh
+
+      - name: Read mod info
+        id: version
+        run: |
+          VERSION=$(python -c "import json; print(json.load(open('info.json'))['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          MOD_NAME=$(python -c "import json; print(json.load(open('info.json'))['name'])")
+          echo "zip=${MOD_NAME}_${VERSION}.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Create version tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch --tags
+          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            TAG_SHA="$(git rev-list -n 1 "v${{ steps.version.outputs.version }}")"
+            if [ "${TAG_SHA}" != "${GITHUB_SHA}" ]; then
+              echo "Tag v${{ steps.version.outputs.version }} already exists on another commit. Update info.json before publishing a new release." >&2
+              exit 1
+            fi
+            echo "Tag v${{ steps.version.outputs.version }} already exists on this commit; continuing."
+            exit 0
+          fi
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          files: ${{ steps.version.outputs.zip }}
+
+      - name: Publish to Factorio Mod Portal
+        env:
+          FACTORIO_MOD_PORTAL_TOKEN: ${{ secrets.FACTORIO_MOD_PORTAL_TOKEN }}
+        run: bash scripts/publish-factorio.sh "${{ steps.version.outputs.zip }}"

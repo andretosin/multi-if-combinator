@@ -1,0 +1,6 @@
+# Build output from scripts/package*.sh
+/build/
+*.zip
+
+# Local editor / assistant settings
+/.claude/

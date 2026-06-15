@@ -1,0 +1,13 @@
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 15. 06. 2026
+  Features:
+    - Added the Multi-If Combinator: evaluates many fully independent IF conditions at once, each row mapping one condition to its own dedicated output (e.g. IF iron plate < 500 THEN output iron plate = 500).
+    - Added a custom GUI to add, edit and remove condition rows, each with an input signal, operator (<, >, =, >=, <=, !=), a constant value or comparison signal, and a dedicated output signal/value.
+    - Added a recipe unlocked by the circuit-network technology, built from a decider combinator, electronic circuits and copper cable.
+    - Added English and Brazilian Portuguese localization.
+  Info:
+    - Output is emitted through a hidden constant combinator wired to the entity's output poles, keeping input and output on separate networks (no feedback).
+    - UPS-friendly processing: combinators are bucketed across ticks and only rewrite their output when the result changes.
+    - Added blueprint, copy-paste and clone support for condition configuration.
+    - Added a startup setting to tune the per-combinator update interval.
