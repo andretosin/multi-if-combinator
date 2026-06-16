@@ -27,6 +27,9 @@ local OUTPUT_NAME = "multi-if-combinator-output"
 local UPDATE_INTERVAL =
   math.max(1, math.floor(settings.startup["multi-if-combinator-update-interval"].value))
 
+-- How often open GUIs refresh their live input-count readouts (ticks).
+local GUI_REFRESH_INTERVAL = 15
+
 local IN_RED   = defines.wire_connector_id.combinator_input_red
 local IN_GREEN = defines.wire_connector_id.combinator_input_green
 local OUT_RED  = defines.wire_connector_id.combinator_output_red
@@ -81,6 +84,12 @@ end
 
 local function default_condition()
   return { operator = "<", compare_value = 0, output_value = 0 }
+end
+
+-- Display form of a signal count shown under each input. Kept raw (no thousands
+-- separator) to stay unambiguous across locales.
+local function format_count(n)
+  return tostring(n)
 end
 
 -- =============================================================================
@@ -385,6 +394,9 @@ local function refresh_rows(player, data)
   end
   tbl.clear()
 
+  -- Snapshot of the input network so each row can show its current amount.
+  local inputs = (data.entity and data.entity.valid) and read_inputs(data.entity) or {}
+
   -- Header row.
   tbl.add({ type = "label", style = "caption_label", caption = { "multi-if-combinator.col-input" } })
   tbl.add({ type = "label", style = "caption_label", caption = { "multi-if-combinator.col-operator" } })
@@ -395,13 +407,23 @@ local function refresh_rows(player, data)
   tbl.add({ type = "empty-widget" })
 
   for index, cond in ipairs(data.conditions) do
-    -- Input signal.
-    local input_btn = tbl.add({
+    -- Input signal + a live readout of how much of it is on the input network,
+    -- so the player can see at a glance what is currently lacking.
+    local input_wrap = tbl.add({ type = "flow", name = "inwrap_" .. index, direction = "vertical" })
+    input_wrap.style.horizontal_align = "center"
+    local input_btn = input_wrap.add({
       type = "choose-elem-button",
       elem_type = "signal",
       tags = { multi_if = true, action = "input_signal", index = index },
     })
     input_btn.elem_value = cond.input_signal
+    local count_label = input_wrap.add({
+      type = "label",
+      name = "count_" .. index,
+      caption = cond.input_signal and format_count(signal_value(inputs, cond.input_signal)) or "",
+      tooltip = { "multi-if-combinator.input-count-tooltip" },
+    })
+    count_label.style.font_color = { 0.85, 0.85, 0.85 }
 
     -- Operator.
     tbl.add({
@@ -464,6 +486,38 @@ local function refresh_rows(player, data)
       tooltip = { "multi-if-combinator.remove-row-tooltip" },
       tags = { multi_if = true, action = "remove_row", index = index },
     })
+  end
+end
+
+-- Refresh just the per-row input-count labels of one open GUI (cheap; no rebuild).
+local function update_gui_inputs(player, data)
+  if not (data.entity and data.entity.valid) then
+    return
+  end
+  local tbl = find_table(player)
+  if not tbl then
+    return
+  end
+  local inputs = read_inputs(data.entity)
+  for index, cond in ipairs(data.conditions) do
+    local wrap = tbl["inwrap_" .. index]
+    if wrap and wrap.valid then
+      local label = wrap["count_" .. index]
+      if label and label.valid then
+        label.caption = cond.input_signal and format_count(signal_value(inputs, cond.input_signal)) or ""
+      end
+    end
+  end
+end
+
+-- Update every open GUI's live input counts.
+local function update_open_guis()
+  for player_index, g in pairs(storage.guis) do
+    local data = storage.combinators[g.unit_number]
+    local player = game.get_player(player_index)
+    if player and data then
+      update_gui_inputs(player, data)
+    end
   end
 end
 
@@ -855,12 +909,16 @@ end)
 -- =============================================================================
 
 script.on_event(defines.events.on_tick, function(event)
-  local bucket = storage.schedule[event.tick % UPDATE_INTERVAL]
-  if not bucket then
-    return
+  local tick = event.tick
+  local bucket = storage.schedule[tick % UPDATE_INTERVAL]
+  if bucket then
+    for unit_number in pairs(bucket) do
+      process(unit_number)
+    end
   end
-  for unit_number in pairs(bucket) do
-    process(unit_number)
+  -- Keep the live input-count readouts in any open GUI fresh.
+  if tick % GUI_REFRESH_INTERVAL == 0 then
+    update_open_guis()
   end
 end)
 

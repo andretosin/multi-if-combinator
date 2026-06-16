@@ -4,6 +4,7 @@ Date: 15. 06. 2026
   Features:
     - Added the Multi-If Combinator: evaluates many fully independent IF conditions at once, each row mapping one condition to its own dedicated output (e.g. IF iron plate < 500 THEN output iron plate = 500).
     - Added a custom GUI to add, edit and remove condition rows, each with an input signal, operator (<, >, =, >=, <=, !=), a constant value or comparison signal, and a dedicated output signal/value.
+    - Each row shows the live amount of its input signal currently on the input network, so it is easy to see what is lacking.
     - Added a recipe unlocked by the circuit-network technology, built from a decider combinator, electronic circuits and copper cable.
     - Added English and Brazilian Portuguese localization.
   Info:

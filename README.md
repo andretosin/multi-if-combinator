@@ -36,6 +36,7 @@ Because input and output live on separate circuit networks, outputs never feed b
    - Operators: `<`, `>`, `=`, `≥`, `≤`, `≠`.
    - If a **comparison signal** is selected, it is read from the input network and the constant value is ignored.
    - A row only takes effect once it has both an input signal and an output signal.
+   - Below each input signal the panel shows the **live amount** of that signal currently on the input network, so you can see at a glance what is lacking.
 
 Configuration is saved per combinator and travels with **blueprints**, **copy-paste** (Shift+right-click / Shift+left-click) and **cloning**.
 
